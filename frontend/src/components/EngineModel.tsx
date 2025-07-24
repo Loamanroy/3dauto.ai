@@ -1,93 +1,159 @@
-import { useState, useEffect } from 'react'
+import { useRef, useEffect } from 'react'
 
 interface EngineModelProps {
   highlightPart: string
 }
 
-export function EngineModel({ highlightPart }: EngineModelProps) {
-  const [rotation, setRotation] = useState(0)
-
+function FallbackModel({ highlightPart }: { highlightPart: string }) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  
   useEffect(() => {
-    const interval = setInterval(() => {
-      setRotation(prev => prev + 0.5)
-    }, 50)
-    return () => clearInterval(interval)
+    if (containerRef.current) {
+      const container = containerRef.current
+      const engineGroup = container.querySelector('.engine-group') as HTMLElement
+      if (engineGroup) {
+        let rotation = 0
+        const animate = () => {
+          rotation += 0.005
+          engineGroup.style.transform = `rotateX(-15deg) rotateY(${rotation}rad) scale(0.8)`
+          requestAnimationFrame(animate)
+        }
+        animate()
+      }
+    }
   }, [])
 
   const getPartStyle = (partName: string) => {
     const isHighlighted = highlightPart === partName
     return {
       backgroundColor: isHighlighted ? '#ff6b6b' : '#888888',
-      boxShadow: isHighlighted ? '0 0 20px rgba(255, 107, 107, 0.6)' : '0 2px 4px rgba(0,0,0,0.1)',
-      transform: isHighlighted ? 'scale(1.05)' : 'scale(1)',
+      boxShadow: isHighlighted ? '0 0 20px #ff6b6b, inset 0 0 20px rgba(255, 107, 107, 0.3)' : 'none',
+      filter: isHighlighted ? 'brightness(1.2)' : 'none',
       transition: 'all 0.3s ease'
     }
   }
 
   return (
-    <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg relative overflow-hidden">
-      <div 
-        className="absolute inset-0 flex items-center justify-center"
-        style={{ 
-          transform: `perspective(800px) rotateY(${rotation * 0.5}deg) rotateX(10deg)`,
-          transformStyle: 'preserve-3d'
-        }}
-      >
-        {/* Engine block */}
+    <div 
+      ref={containerRef}
+      className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg relative overflow-hidden"
+      style={{ perspective: '1000px' }}
+    >
+      <div className="flex items-center justify-center h-full">
         <div 
-          className="absolute rounded-lg"
-          style={{
-            width: '120px',
-            height: '80px',
-            ...getPartStyle('engine'),
-            transform: 'translateZ(0px)'
+          className="engine-group relative"
+          style={{ 
+            transformStyle: 'preserve-3d',
+            transform: 'rotateX(-15deg) rotateY(0deg) scale(0.8)'
           }}
-        />
-        
-        {/* Spark plugs */}
-        <div 
-          className="absolute rounded-full"
-          style={{
-            width: '12px',
-            height: '40px',
-            ...getPartStyle('sparkplugs'),
-            transform: 'translateY(-50px) translateZ(10px)',
-            borderRadius: '6px'
-          }}
-        />
-        
-        {/* Ignition coils */}
-        <div 
-          className="absolute rounded"
-          style={{
-            width: '20px',
-            height: '30px',
-            ...getPartStyle('coils'),
-            transform: 'translateY(-70px) translateZ(15px)'
-          }}
-        />
-        
-        {/* Engine cover */}
-        <div 
-          className="absolute rounded-lg"
-          style={{
-            width: '140px',
-            height: '15px',
-            ...getPartStyle('cover'),
-            transform: 'translateY(-90px) translateZ(20px)'
-          }}
-        />
-        
-        {/* Battery */}
-        <div 
-          className="absolute rounded"
-          style={{
-            width: '40px',
-            height: '30px',
-            ...getPartStyle('battery'),
-            transform: 'translateX(100px) translateY(20px) translateZ(5px)'
-          }}
-        />
+        >
+          {/* Engine Block */}
+          <div
+            className="absolute rounded-lg shadow-lg"
+            style={{
+              width: '120px',
+              height: '80px',
+              ...getPartStyle('engine'),
+              transform: 'translateZ(0px)'
+            }}
+          />
+          
+          {/* Spark Plugs */}
+          <div
+            className="absolute rounded-full shadow-lg"
+            style={{
+              width: '12px',
+              height: '60px',
+              left: '30px',
+              top: '-30px',
+              ...getPartStyle('sparkplugs'),
+              transform: 'translateZ(10px)'
+            }}
+          />
+          <div
+            className="absolute rounded-full shadow-lg"
+            style={{
+              width: '12px',
+              height: '60px',
+              left: '50px',
+              top: '-30px',
+              ...getPartStyle('sparkplugs'),
+              transform: 'translateZ(10px)'
+            }}
+          />
+          <div
+            className="absolute rounded-full shadow-lg"
+            style={{
+              width: '12px',
+              height: '60px',
+              left: '70px',
+              top: '-30px',
+              ...getPartStyle('sparkplugs'),
+              transform: 'translateZ(10px)'
+            }}
+          />
+          
+          {/* Ignition Coils */}
+          <div
+            className="absolute rounded-lg shadow-lg"
+            style={{
+              width: '20px',
+              height: '40px',
+              left: '25px',
+              top: '-50px',
+              ...getPartStyle('coils'),
+              transform: 'translateZ(20px)'
+            }}
+          />
+          <div
+            className="absolute rounded-lg shadow-lg"
+            style={{
+              width: '20px',
+              height: '40px',
+              left: '45px',
+              top: '-50px',
+              ...getPartStyle('coils'),
+              transform: 'translateZ(20px)'
+            }}
+          />
+          <div
+            className="absolute rounded-lg shadow-lg"
+            style={{
+              width: '20px',
+              height: '40px',
+              left: '65px',
+              top: '-50px',
+              ...getPartStyle('coils'),
+              transform: 'translateZ(20px)'
+            }}
+          />
+          
+          {/* Engine Cover */}
+          <div
+            className="absolute rounded-lg shadow-lg"
+            style={{
+              width: '140px',
+              height: '15px',
+              left: '-10px',
+              top: '-70px',
+              ...getPartStyle('cover'),
+              transform: 'translateZ(30px)'
+            }}
+          />
+          
+          {/* Battery */}
+          <div
+            className="absolute rounded-lg shadow-lg"
+            style={{
+              width: '50px',
+              height: '35px',
+              left: '140px',
+              top: '20px',
+              ...getPartStyle('battery'),
+              transform: 'translateZ(5px)'
+            }}
+          />
+        </div>
       </div>
       
       <div className="absolute bottom-4 right-4 text-xs text-gray-600 bg-white/80 px-2 py-1 rounded">
@@ -99,8 +165,12 @@ export function EngineModel({ highlightPart }: EngineModelProps) {
       </div>
       
       <div className="absolute top-4 left-4 text-xs text-gray-500 bg-white/80 px-2 py-1 rounded">
-        CSS 3D Engine Model
+        3D Engine Model (Enhanced CSS)
       </div>
     </div>
   )
+}
+
+export function EngineModel({ highlightPart }: EngineModelProps) {
+  return <FallbackModel highlightPart={highlightPart} />
 }
