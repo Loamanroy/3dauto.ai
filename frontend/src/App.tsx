@@ -7,6 +7,7 @@ import { PartsPage } from './pages/PartsPage.tsx'
 import { ProductPage } from './pages/ProductPage.tsx'
 import { CartPage } from './pages/CartPage.tsx'
 import { AuthPage } from './pages/AuthPage.tsx'
+import { VinPage } from './pages/VinPage.tsx'
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
         <Route path="/parts" element={<PartsPage />} />
         <Route path="/product/:id" element={<ProductPage />} />
         <Route path="/cart" element={<CartPage />} />
+        <Route path="/vin" element={<VinPage />} />
         <Route path="/auth" element={<AuthPage />} />
       </Routes>
     </div>

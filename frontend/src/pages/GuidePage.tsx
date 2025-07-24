@@ -155,7 +155,7 @@ export function GuidePage() {
             3D-модель двигателя
           </h2>
           <div className="h-96 bg-gray-100 rounded-lg border-2 border-gray-200">
-            <EngineModel highlightPart="sparkplugs" />
+            <EngineModel highlightPart={highlightPart} />
           </div>
           <div className="mt-4 p-4 bg-blue-50 rounded-lg">
             <h3 className="font-semibold text-blue-900 mb-2">

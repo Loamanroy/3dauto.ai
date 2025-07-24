@@ -18,6 +18,9 @@ export function Navbar() {
             <Link to="/parts" className="text-gray-700 hover:text-blue-600 font-medium">
               Каталог запчастей
             </Link>
+            <Link to="/vin" className="text-gray-700 hover:text-blue-600 font-medium">
+              VIN-декодер
+            </Link>
             <div className="flex items-center space-x-4">
               <Link to="/cart" className="text-gray-700 hover:text-blue-600">
                 <ShoppingCart className="h-6 w-6" />
