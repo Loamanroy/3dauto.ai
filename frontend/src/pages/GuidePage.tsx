@@ -1,7 +1,7 @@
 import { useParams, Link } from 'react-router-dom'
 import { useState } from 'react'
 import { Download, Wrench, Clock, ShoppingCart } from 'lucide-react'
-import { EngineModel } from '../components/EngineModel'
+import EngineModel from '../components/EngineModel'
 import { useGuideData } from '../hooks/useGuideData.ts'
 
 const sparkPlugSteps = [
@@ -101,7 +101,7 @@ export function GuidePage() {
             ) : (
               steps.map((step: any, index: number) => (
               <div
-                key={step.id}
+                key={step.id || index}
                 className={`p-4 rounded-lg border-2 cursor-pointer transition-colors ${
                   index === currentStep
                     ? 'border-blue-500 bg-blue-50'
@@ -155,7 +155,7 @@ export function GuidePage() {
             3D-модель двигателя
           </h2>
           <div className="h-96 bg-gray-100 rounded-lg border-2 border-gray-200">
-            <EngineModel highlightPart={highlightPart} />
+            <EngineModel highlightPart="sparkplugs" />
           </div>
           <div className="mt-4 p-4 bg-blue-50 rounded-lg">
             <h3 className="font-semibold text-blue-900 mb-2">

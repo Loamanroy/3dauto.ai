@@ -1,176 +1,50 @@
-import { useRef, useEffect } from 'react'
+import React, { Suspense } from "react"
+import { Canvas } from "@react-three/fiber"
+import { OrbitControls, useGLTF } from "@react-three/drei"
 
-interface EngineModelProps {
-  highlightPart: string
+type EngineModelProps = {
+  highlightPart?: string
 }
 
-function FallbackModel({ highlightPart }: { highlightPart: string }) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  
-  useEffect(() => {
-    if (containerRef.current) {
-      const container = containerRef.current
-      const engineGroup = container.querySelector('.engine-group') as HTMLElement
-      if (engineGroup) {
-        let rotation = 0
-        const animate = () => {
-          rotation += 0.005
-          engineGroup.style.transform = `rotateX(-15deg) rotateY(${rotation}rad) scale(0.8)`
-          requestAnimationFrame(animate)
-        }
-        animate()
-      }
-    }
-  }, [])
-
-  const getPartStyle = (partName: string) => {
-    const isHighlighted = highlightPart === partName
-    return {
-      backgroundColor: isHighlighted ? '#ff6b6b' : '#888888',
-      boxShadow: isHighlighted ? '0 0 20px #ff6b6b, inset 0 0 20px rgba(255, 107, 107, 0.3)' : 'none',
-      filter: isHighlighted ? 'brightness(1.2)' : 'none',
-      transition: 'all 0.3s ease'
-    }
-  }
+function Model({ highlightPart }: EngineModelProps) {
+  const gltf = useGLTF("/models/sparkplug.glb")
 
   return (
-    <div 
-      ref={containerRef}
-      className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg relative overflow-hidden"
-      style={{ perspective: '1000px' }}
-    >
-      <div className="flex items-center justify-center h-full">
-        <div 
-          className="engine-group relative"
-          style={{ 
-            transformStyle: 'preserve-3d',
-            transform: 'rotateX(-15deg) rotateY(0deg) scale(0.8)'
-          }}
-        >
-          {/* Engine Block */}
-          <div
-            className="absolute rounded-lg shadow-lg"
-            style={{
-              width: '120px',
-              height: '80px',
-              ...getPartStyle('engine'),
-              transform: 'translateZ(0px)'
-            }}
+    <group>
+      {Object.entries(gltf.nodes).map(([name, node]: any) => {
+        if (!node.geometry) return null
+
+        const isHighlighted = name.toLowerCase() === highlightPart?.toLowerCase()
+
+        return (
+          <mesh
+            key={name}
+            geometry={node.geometry}
+            material={gltf.materials[node.material?.name] || undefined}
+            material-color={isHighlighted ? "#ff6b6b" : "#888888"}
+            castShadow
+            receiveShadow
           />
-          
-          {/* Spark Plugs */}
-          <div
-            className="absolute rounded-full shadow-lg"
-            style={{
-              width: '12px',
-              height: '60px',
-              left: '30px',
-              top: '-30px',
-              ...getPartStyle('sparkplugs'),
-              transform: 'translateZ(10px)'
-            }}
-          />
-          <div
-            className="absolute rounded-full shadow-lg"
-            style={{
-              width: '12px',
-              height: '60px',
-              left: '50px',
-              top: '-30px',
-              ...getPartStyle('sparkplugs'),
-              transform: 'translateZ(10px)'
-            }}
-          />
-          <div
-            className="absolute rounded-full shadow-lg"
-            style={{
-              width: '12px',
-              height: '60px',
-              left: '70px',
-              top: '-30px',
-              ...getPartStyle('sparkplugs'),
-              transform: 'translateZ(10px)'
-            }}
-          />
-          
-          {/* Ignition Coils */}
-          <div
-            className="absolute rounded-lg shadow-lg"
-            style={{
-              width: '20px',
-              height: '40px',
-              left: '25px',
-              top: '-50px',
-              ...getPartStyle('coils'),
-              transform: 'translateZ(20px)'
-            }}
-          />
-          <div
-            className="absolute rounded-lg shadow-lg"
-            style={{
-              width: '20px',
-              height: '40px',
-              left: '45px',
-              top: '-50px',
-              ...getPartStyle('coils'),
-              transform: 'translateZ(20px)'
-            }}
-          />
-          <div
-            className="absolute rounded-lg shadow-lg"
-            style={{
-              width: '20px',
-              height: '40px',
-              left: '65px',
-              top: '-50px',
-              ...getPartStyle('coils'),
-              transform: 'translateZ(20px)'
-            }}
-          />
-          
-          {/* Engine Cover */}
-          <div
-            className="absolute rounded-lg shadow-lg"
-            style={{
-              width: '140px',
-              height: '15px',
-              left: '-10px',
-              top: '-70px',
-              ...getPartStyle('cover'),
-              transform: 'translateZ(30px)'
-            }}
-          />
-          
-          {/* Battery */}
-          <div
-            className="absolute rounded-lg shadow-lg"
-            style={{
-              width: '50px',
-              height: '35px',
-              left: '140px',
-              top: '20px',
-              ...getPartStyle('battery'),
-              transform: 'translateZ(5px)'
-            }}
-          />
-        </div>
-      </div>
-      
-      <div className="absolute bottom-4 right-4 text-xs text-gray-600 bg-white/80 px-2 py-1 rounded">
-        {highlightPart === 'sparkplugs' && 'Свечи зажигания выделены'}
-        {highlightPart === 'coils' && 'Катушки зажигания выделены'}
-        {highlightPart === 'cover' && 'Крышка двигателя выделена'}
-        {highlightPart === 'battery' && 'Аккумулятор выделен'}
-        {!['sparkplugs', 'coils', 'cover', 'battery'].includes(highlightPart) && 'Интерактивная 3D модель'}
-      </div>
-      
-      <div className="absolute top-4 left-4 text-xs text-gray-500 bg-white/80 px-2 py-1 rounded">
-        3D Engine Model (Enhanced CSS)
-      </div>
+        )
+      })}
+    </group>
+  )
+}
+
+export default function EngineModel({ highlightPart }: EngineModelProps) {
+  return (
+    <div className="h-[400px] w-full rounded-xl border bg-muted">
+      <Canvas shadows camera={{ position: [0, 2, 4], fov: 50 }}>
+        <ambientLight intensity={0.5} />
+        <directionalLight position={[5, 5, 5]} intensity={1} />
+        <Suspense fallback={null}>
+          <Model highlightPart={highlightPart} />
+        </Suspense>
+        <OrbitControls enablePan enableZoom enableRotate />
+      </Canvas>
     </div>
   )
 }
 
-export function EngineModel({ highlightPart }: EngineModelProps) {
-  return <FallbackModel highlightPart={highlightPart} />
-}
+// Не забудь: npm install three @react-three/fiber @react-three/drei
+// И помести sparkplug.glb в public/models/
