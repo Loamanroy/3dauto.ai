@@ -1,6 +1,8 @@
-import { useParams } from 'react-router-dom'
+import { useParams, Link } from 'react-router-dom'
 import { useState } from 'react'
-import { Download, Wrench, Clock } from 'lucide-react'
+import { Download, Wrench, Clock, ShoppingCart } from 'lucide-react'
+import { EngineModel } from '../components/EngineModel'
+import { useGuideData } from '../hooks/useGuideData.ts'
 
 const sparkPlugSteps = [
   {
@@ -53,46 +55,37 @@ const sparkPlugSteps = [
   }
 ]
 
-function EngineModel({ highlightPart }: { highlightPart: string }) {
-  return (
-    <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-400 rounded-lg flex items-center justify-center relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-100/20 to-transparent"></div>
-      <div className={`relative z-10 w-48 h-32 rounded-lg flex items-center justify-center text-white font-semibold shadow-lg transition-all duration-300 ${
-        highlightPart === 'sparkplugs' 
-          ? 'bg-gradient-to-br from-red-400 to-red-600 scale-110 shadow-red-300/50' 
-          : 'bg-gradient-to-br from-gray-600 to-gray-800'
-      }`}>
-        <div className="text-center">
-          <div className="text-lg font-bold">3D Engine Model</div>
-          <div className="text-sm opacity-80">
-            {highlightPart === 'sparkplugs' ? 'Spark Plugs Highlighted' : 'Interactive View'}
-          </div>
-        </div>
-      </div>
-      <div className="absolute bottom-4 right-4 text-xs text-gray-600 bg-white/80 px-2 py-1 rounded">
-        Click steps to highlight parts
-      </div>
-    </div>
-  )
-}
 
 export function GuidePage() {
-  const { make, model, year } = useParams()
+  const { make, model, year, procedure } = useParams()
   const [currentStep, setCurrentStep] = useState(0)
   const [hoveredStep, setHoveredStep] = useState<number | null>(null)
+  
+  const { guideData, loading, error } = useGuideData(
+    make || 'Ford', 
+    model?.replace('%20', ' ') || 'Focus III', 
+    year || '2015', 
+    procedure || 'spark-plugs'
+  )
 
-  const currentStepData = sparkPlugSteps[currentStep]
-  const highlightPart = hoveredStep !== null ? sparkPlugSteps[hoveredStep].highlight : currentStepData.highlight
+  const steps = guideData?.steps || sparkPlugSteps
+  const currentStepData = steps[currentStep]
+  const highlightPart = hoveredStep !== null ? steps[hoveredStep].highlight : currentStepData?.highlight || 'engine'
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          {make} {model} {year} - Замена свечей зажигания
+          {make} {model?.replace('%20', ' ')} {year} - {guideData?.title || 'Замена свечей зажигания'}
         </h1>
         <p className="text-gray-600">
           Пошаговая инструкция с 3D-визуализацией
         </p>
+        {error && (
+          <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="text-yellow-800">{error}</p>
+          </div>
+        )}
       </div>
 
       <div className="grid lg:grid-cols-2 gap-8">
@@ -101,7 +94,12 @@ export function GuidePage() {
             Пошаговые инструкции
           </h2>
           <div className="space-y-4">
-            {sparkPlugSteps.map((step, index) => (
+            {loading ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500">Загрузка гайда...</p>
+              </div>
+            ) : (
+              steps.map((step: any, index: number) => (
               <div
                 key={step.id}
                 className={`p-4 rounded-lg border-2 cursor-pointer transition-colors ${
@@ -119,7 +117,7 @@ export function GuidePage() {
                       ? 'bg-blue-600 text-white'
                       : 'bg-gray-200 text-gray-600'
                   }`}>
-                    {step.id}
+                    {index + 1}
                   </div>
                   <div className="flex-1">
                     <h3 className="font-semibold text-gray-900 mb-1">
@@ -129,7 +127,11 @@ export function GuidePage() {
                       {step.description}
                     </p>
                     <div className="flex flex-wrap gap-2 text-xs">
-                      {step.tools.map((tool, i) => (
+                      {guideData?.tools?.map((tool: string, i: number) => (
+                        <span key={i} className="bg-gray-100 px-2 py-1 rounded">
+                          {tool}
+                        </span>
+                      )) || step.tools?.map((tool: string, i: number) => (
                         <span key={i} className="bg-gray-100 px-2 py-1 rounded">
                           {tool}
                         </span>
@@ -143,7 +145,8 @@ export function GuidePage() {
                   </div>
                 </div>
               </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
@@ -156,11 +159,20 @@ export function GuidePage() {
           </div>
           <div className="mt-4 p-4 bg-blue-50 rounded-lg">
             <h3 className="font-semibold text-blue-900 mb-2">
-              Шаг {currentStepData.id}: {currentStepData.title}
+              Шаг {currentStep + 1}: {currentStepData?.title}
             </h3>
             <p className="text-blue-800 text-sm">
-              {currentStepData.description}
+              {currentStepData?.description}
             </p>
+            <div className="mt-3">
+              <Link
+                to="/product/1?oem=1234567890"
+                className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm"
+              >
+                <ShoppingCart className="h-4 w-4" />
+                Купить запчасть
+              </Link>
+            </div>
           </div>
         </div>
       </div>
@@ -179,30 +191,47 @@ export function GuidePage() {
               </tr>
             </thead>
             <tbody>
-              <tr className="border-b border-gray-100">
-                <td className="py-2 px-4 flex items-center">
-                  <Wrench className="h-4 w-4 mr-2 text-gray-500" />
-                  Свечной ключ 16мм
-                </td>
-                <td className="py-2 px-4">Свечи зажигания</td>
-                <td className="py-2 px-4 font-semibold text-red-600">25 Нм</td>
-              </tr>
-              <tr className="border-b border-gray-100">
-                <td className="py-2 px-4 flex items-center">
-                  <Wrench className="h-4 w-4 mr-2 text-gray-500" />
-                  Ключ на 8мм
-                </td>
-                <td className="py-2 px-4">Катушки зажигания</td>
-                <td className="py-2 px-4 font-semibold text-red-600">8 Нм</td>
-              </tr>
-              <tr>
-                <td className="py-2 px-4 flex items-center">
-                  <Wrench className="h-4 w-4 mr-2 text-gray-500" />
-                  Ключ на 10мм
-                </td>
-                <td className="py-2 px-4">Декоративная крышка</td>
-                <td className="py-2 px-4 font-semibold text-red-600">5 Нм</td>
-              </tr>
+              {guideData?.tools?.map((tool: string, index: number) => (
+                <tr key={index} className="border-b border-gray-100">
+                  <td className="py-2 px-4 flex items-center">
+                    <Wrench className="h-4 w-4 mr-2 text-gray-500" />
+                    {tool}
+                  </td>
+                  <td className="py-2 px-4">
+                    {Object.keys(guideData.torqueSpecs)[index] || 'Общее применение'}
+                  </td>
+                  <td className="py-2 px-4 font-semibold text-red-600">
+                    {Object.values(guideData.torqueSpecs || {})[index] as string || '-'}
+                  </td>
+                </tr>
+              )) || (
+                <>
+                  <tr className="border-b border-gray-100">
+                    <td className="py-2 px-4 flex items-center">
+                      <Wrench className="h-4 w-4 mr-2 text-gray-500" />
+                      Свечной ключ 16мм
+                    </td>
+                    <td className="py-2 px-4">Свечи зажигания</td>
+                    <td className="py-2 px-4 font-semibold text-red-600">25 Нм</td>
+                  </tr>
+                  <tr className="border-b border-gray-100">
+                    <td className="py-2 px-4 flex items-center">
+                      <Wrench className="h-4 w-4 mr-2 text-gray-500" />
+                      Ключ на 8мм
+                    </td>
+                    <td className="py-2 px-4">Катушки зажигания</td>
+                    <td className="py-2 px-4 font-semibold text-red-600">8 Нм</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 px-4 flex items-center">
+                      <Wrench className="h-4 w-4 mr-2 text-gray-500" />
+                      Ключ на 10мм
+                    </td>
+                    <td className="py-2 px-4">Декоративная крышка</td>
+                    <td className="py-2 px-4 font-semibold text-red-600">5 Нм</td>
+                  </tr>
+                </>
+              )}
             </tbody>
           </table>
         </div>

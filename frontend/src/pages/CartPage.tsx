@@ -1,25 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Trash2, Plus, Minus, CreditCard, ArrowLeft } from 'lucide-react'
+import { getCart, updateCartItem, removeFromCart, Cart } from '../api/cart'
+import { createSubscription } from '../api/auth'
 
-const cartItems = [
-  {
-    id: 1,
-    name: "Свечи зажигания NGK",
-    oem: "1234567890",
-    price: 45.99,
-    quantity: 4,
-    image: "/api/placeholder/100/100"
-  },
-  {
-    id: 2,
-    name: "Лампа H7 Philips",
-    oem: "0987654321",
-    price: 12.50,
-    quantity: 2,
-    image: "/api/placeholder/100/100"
-  }
-]
 
 const subscriptionPlans = [
   {
@@ -51,23 +35,61 @@ const subscriptionPlans = [
 ]
 
 export function CartPage() {
-  const [items, setItems] = useState(cartItems)
+  const [cart, setCart] = useState<Cart | null>(null)
   const [selectedPlan, setSelectedPlan] = useState('monthly')
   const [purchaseType, setPurchaseType] = useState<'parts' | 'subscription'>('parts')
+  const [loading, setLoading] = useState(true)
+  const [checkoutLoading, setCheckoutLoading] = useState(false)
 
-  const updateQuantity = (id: number, newQuantity: number) => {
-    if (newQuantity === 0) {
-      setItems(items.filter(item => item.id !== id))
-    } else {
-      setItems(items.map(item => 
-        item.id === id ? { ...item, quantity: newQuantity } : item
-      ))
+  useEffect(() => {
+    const loadCart = async () => {
+      try {
+        setLoading(true)
+        const data = await getCart()
+        setCart(data)
+      } catch (error) {
+        console.error('Failed to load cart:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadCart()
+  }, [])
+
+  const updateQuantity = async (id: number, newQuantity: number) => {
+    try {
+      if (newQuantity === 0) {
+        const updatedCart = await removeFromCart(id)
+        setCart(updatedCart)
+      } else {
+        const updatedCart = await updateCartItem(id, newQuantity)
+        setCart(updatedCart)
+      }
+    } catch (error) {
+      console.error('Failed to update cart:', error)
     }
   }
 
-  const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0)
-  const shipping = subtotal > 50 ? 0 : 5.99
-  const total = subtotal + shipping
+  const handleCheckout = async () => {
+    try {
+      setCheckoutLoading(true)
+      if (purchaseType === 'subscription') {
+        const { checkoutUrl } = await createSubscription()
+        window.location.href = checkoutUrl
+      } else {
+        console.log('Parts checkout not implemented yet')
+      }
+    } catch (error) {
+      console.error('Checkout failed:', error)
+    } finally {
+      setCheckoutLoading(false)
+    }
+  }
+
+  const items = cart?.items || []
+  const subtotal = cart?.subtotal || 0
+  const shipping = cart?.shipping || 0
+  const total = cart?.total || 0
 
   const selectedSubscription = subscriptionPlans.find(plan => plan.id === selectedPlan)
 
@@ -114,7 +136,11 @@ export function CartPage() {
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">
                   Товары в корзине
                 </h2>
-                {items.length === 0 ? (
+                {loading ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">Загрузка корзины...</p>
+                  </div>
+                ) : items.length === 0 ? (
                   <div className="text-center py-8">
                     <p className="text-gray-500 mb-4">Корзина пуста</p>
                     <Link 
@@ -270,9 +296,13 @@ export function CartPage() {
               </div>
             )}
 
-            <button className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
+            <button 
+              onClick={handleCheckout}
+              disabled={checkoutLoading || (purchaseType === 'parts' && items.length === 0)}
+              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+            >
               <CreditCard className="h-5 w-5" />
-              Оформить заказ
+              {checkoutLoading ? 'Обработка...' : 'Оформить заказ'}
             </button>
 
             <div className="mt-4 text-center">

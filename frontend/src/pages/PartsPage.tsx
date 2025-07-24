@@ -1,53 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Search, Filter, ShoppingCart, Eye } from 'lucide-react'
+import { getParts, searchParts, Part } from '../api/parts'
 
-const parts = [
-  {
-    id: 1,
-    name: "Свечи зажигания NGK",
-    oem: "1234567890",
-    price: 45.99,
-    image: "/api/placeholder/200/200",
-    category: "Зажигание",
-    compatibility: "Ford Focus III 2011-2018",
-    inStock: true,
-    hasGuide: true
-  },
-  {
-    id: 2,
-    name: "Лампа H7 Philips",
-    oem: "0987654321",
-    price: 12.50,
-    image: "/api/placeholder/200/200",
-    category: "Освещение",
-    compatibility: "Ford Focus III 2011-2018",
-    inStock: true,
-    hasGuide: true
-  },
-  {
-    id: 3,
-    name: "Термостат Wahler",
-    oem: "1122334455",
-    price: 89.99,
-    image: "/api/placeholder/200/200",
-    category: "Охлаждение",
-    compatibility: "Ford Focus III 2011-2018",
-    inStock: false,
-    hasGuide: true
-  },
-  {
-    id: 4,
-    name: "Масляный фильтр Mann",
-    oem: "5566778899",
-    price: 15.75,
-    image: "/api/placeholder/200/200",
-    category: "Фильтры",
-    compatibility: "Ford Focus III 2011-2018",
-    inStock: true,
-    hasGuide: false
-  }
-]
 
 const categories = ["Все", "Зажигание", "Освещение", "Охлаждение", "Фильтры"]
 
@@ -55,13 +10,46 @@ export function PartsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('Все')
   const [showFilters, setShowFilters] = useState(false)
+  const [parts, setParts] = useState<Part[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const filteredParts = parts.filter(part => {
-    const matchesSearch = part.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         part.oem.includes(searchTerm)
-    const matchesCategory = selectedCategory === 'Все' || part.category === selectedCategory
-    return matchesSearch && matchesCategory
-  })
+  useEffect(() => {
+    const loadParts = async () => {
+      try {
+        setLoading(true)
+        const data = await getParts()
+        setParts(data)
+      } catch (error) {
+        console.error('Failed to load parts:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadParts()
+  }, [])
+
+  useEffect(() => {
+    const searchForParts = async () => {
+      try {
+        const data = await searchParts(searchTerm, selectedCategory)
+        setParts(data)
+      } catch (error) {
+        console.error('Failed to search parts:', error)
+      }
+    }
+    
+    if (searchTerm || selectedCategory !== 'Все') {
+      searchForParts()
+    } else {
+      const loadAllParts = async () => {
+        const data = await getParts()
+        setParts(data)
+      }
+      loadAllParts()
+    }
+  }, [searchTerm, selectedCategory])
+
+  const filteredParts = parts
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -136,61 +124,67 @@ export function PartsPage() {
         )}
       </div>
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {filteredParts.map(part => (
-          <div key={part.id} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-            <div className="aspect-square bg-gray-100 flex items-center justify-center">
-              <div className="w-32 h-32 bg-gray-300 rounded-lg flex items-center justify-center">
-                <span className="text-gray-500 text-sm">Фото</span>
+      {loading ? (
+        <div className="text-center py-12">
+          <p className="text-gray-500">Загрузка каталога...</p>
+        </div>
+      ) : (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {filteredParts.map(part => (
+            <div key={part.id} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+              <div className="aspect-square bg-gray-100 flex items-center justify-center">
+                <div className="w-32 h-32 bg-gray-300 rounded-lg flex items-center justify-center">
+                  <span className="text-gray-500 text-sm">Фото</span>
+                </div>
               </div>
-            </div>
-            
-            <div className="p-4">
-              <h3 className="font-semibold text-gray-900 mb-1">
-                {part.name}
-              </h3>
-              <p className="text-sm text-gray-600 mb-2">
-                OEM: {part.oem}
-              </p>
-              <p className="text-xs text-gray-500 mb-3">
-                {part.compatibility}
-              </p>
               
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-lg font-bold text-gray-900">
-                  €{part.price}
-                </span>
-                <span className={`text-xs px-2 py-1 rounded ${
-                  part.inStock 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'bg-red-100 text-red-800'
-                }`}>
-                  {part.inStock ? 'В наличии' : 'Под заказ'}
-                </span>
-              </div>
+              <div className="p-4">
+                <h3 className="font-semibold text-gray-900 mb-1">
+                  {part.name}
+                </h3>
+                <p className="text-sm text-gray-600 mb-2">
+                  OEM: {part.oem}
+                </p>
+                <p className="text-xs text-gray-500 mb-3">
+                  {part.compatibility}
+                </p>
+                
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-lg font-bold text-gray-900">
+                    €{part.price}
+                  </span>
+                  <span className={`text-xs px-2 py-1 rounded ${
+                    part.inStock 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-red-100 text-red-800'
+                  }`}>
+                    {part.inStock ? 'В наличии' : 'Под заказ'}
+                  </span>
+                </div>
 
-              <div className="flex gap-2">
-                {part.hasGuide && (
+                <div className="flex gap-2">
+                  {part.hasGuide && (
+                    <Link
+                      to={`/guide/Ford/Focus III/2015/spark-plugs`}
+                      className="flex-1 bg-blue-600 text-white px-3 py-2 rounded text-sm font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-1"
+                    >
+                      <Eye className="h-4 w-4" />
+                      Гайд
+                    </Link>
+                  )}
                   <Link
-                    to={`/guide/Ford/Focus III/2015/spark-plugs`}
-                    className="flex-1 bg-blue-600 text-white px-3 py-2 rounded text-sm font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-1"
+                    to={`/product/${part.id}`}
+                    className="flex-1 border border-gray-300 text-gray-700 px-3 py-2 rounded text-sm font-medium hover:bg-gray-50 transition-colors flex items-center justify-center gap-1"
                   >
-                    <Eye className="h-4 w-4" />
-                    Гайд
+                    <ShoppingCart className="h-4 w-4" />
+                    В корзину
                   </Link>
-                )}
-                <Link
-                  to={`/product/${part.id}`}
-                  className="flex-1 border border-gray-300 text-gray-700 px-3 py-2 rounded text-sm font-medium hover:bg-gray-50 transition-colors flex items-center justify-center gap-1"
-                >
-                  <ShoppingCart className="h-4 w-4" />
-                  В корзину
-                </Link>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {filteredParts.length === 0 && (
         <div className="text-center py-12">
