@@ -105,3 +105,52 @@ export async function searchParts(query: string, category?: string): Promise<Par
     return matchesQuery && matchesCategory
   })
 }
+
+export interface LaximoPart {
+  unitId: string
+  name: string
+  oem: string
+  imageUrl: string
+}
+
+export async function getLaximoParts(
+  catalogCode: string, 
+  unitId: string, 
+  vin?: string
+): Promise<LaximoPart[]> {
+  try {
+    const params = new URLSearchParams()
+    params.append('catalogCode', catalogCode)
+    params.append('unitId', unitId)
+    if (vin) params.append('vin', vin)
+    
+    const response = await fetch(`${API_BASE}/parts?${params}`)
+    if (response.ok) {
+      const data = await response.json()
+      return data.parts || []
+    }
+  } catch (error) {
+    console.log('Laximo API not available, using mock data')
+  }
+  
+  return [
+    {
+      unitId: "1724523522",
+      name: "Крышка ГБЦ", 
+      oem: "FORD1234567",
+      imageUrl: "https://img.laximo.ru/catalog/PSA_P202311/00008825.gif"
+    },
+    {
+      unitId: "1724523523",
+      name: "Свечи зажигания",
+      oem: "NGK12345", 
+      imageUrl: "https://img.laximo.ru/catalog/PSA_P202311/00008826.gif"
+    },
+    {
+      unitId: "1724523524",
+      name: "Катушка зажигания",
+      oem: "BOSCH98765",
+      imageUrl: "https://img.laximo.ru/catalog/PSA_P202311/00008827.gif"
+    }
+  ]
+}

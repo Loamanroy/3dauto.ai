@@ -1,7 +1,8 @@
-import { useParams, Link } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { useState } from 'react'
-import { Download, Wrench, Clock, ShoppingCart } from 'lucide-react'
+import { Download, Wrench, Clock } from 'lucide-react'
 import EngineModel from '../components/EngineModel'
+import { PartsGallery } from '../components/PartsGallery'
 import { useGuideData } from '../hooks/useGuideData.ts'
 
 const sparkPlugSteps = [
@@ -161,17 +162,19 @@ export function GuidePage() {
             <h3 className="font-semibold text-blue-900 mb-2">
               Шаг {currentStep + 1}: {currentStepData?.title}
             </h3>
-            <p className="text-blue-800 text-sm">
+            <p className="text-blue-800 text-sm mb-4">
               {currentStepData?.description}
             </p>
-            <div className="mt-3">
-              <Link
-                to="/product/1?oem=1234567890"
-                className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm"
-              >
-                <ShoppingCart className="h-4 w-4" />
-                Купить запчасть
-              </Link>
+            
+            <div className="bg-white rounded-lg p-4 border border-blue-200">
+              <h4 className="font-semibold text-gray-900 mb-3 text-sm">
+                Необходимые запчасти
+              </h4>
+              <PartsGallery
+                make={make}
+                model={model?.replace('%20', ' ')}
+                year={year}
+              />
             </div>
           </div>
         </div>
